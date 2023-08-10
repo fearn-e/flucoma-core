@@ -61,6 +61,7 @@ public:
     controlChannelsOut({3, -1});
     setInputLabels({"left", "middle", "right"});
     setOutputLabels({"lefto", "middleo", "righto"});
+    for (int i = 0; i < numVoices; ++i) { mFreeVoices.push(i); }
   }
 
   template <typename T>
