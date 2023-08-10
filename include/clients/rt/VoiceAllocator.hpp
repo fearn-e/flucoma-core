@@ -54,8 +54,8 @@ public:
     return VoiceAllocatorParams;
   }
 
-  VoiceAllocatorClient(ParamSetViewType& p, FluidContext&)
-      : mParams(p), mInputSize{0}, mSizeTracker{0}
+  VoiceAllocatorClient(ParamSetViewType& p, FluidContext&, int numVoices = 5)
+      : mParams(p), mInputSize{0}, mSizeTracker{0}, mVoices(numVoices), mIncomingVoices(numVoices), mFreqRange{50}
   {
     controlChannelsIn(3);
     controlChannelsOut({3, -1});
@@ -122,9 +122,13 @@ public:
 
 private:
   //  algorithm::RunningStats mAlgorithm;
-  //std::ofstream                mFile;
-  index                        mInputSize;
-  ParameterTrackChanges<index> mSizeTracker;
+  std::queue<int>                               mFreeVoices;
+  std::deque<int>                               mActiveVoices;
+  std::vector<std::tuple<float, float, bool>>   mVoices; //freq, mag, active
+  std::vector<std::pair<double, double>>        mIncomingVoices; //freq, mag
+  int                                           mFreqRange;
+  index                                         mInputSize;
+  ParameterTrackChanges<index>                  mSizeTracker;
 };
 
 } // namespace voiceallocator
