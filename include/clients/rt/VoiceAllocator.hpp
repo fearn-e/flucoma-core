@@ -18,6 +18,7 @@ under the European Union’s Horizon 2020 research and innovation programme
 #include "../common/ParameterTypes.hpp"
 // #include "../../algorithms/public/RunningStats.hpp"
 #include "../../data/TensorTypes.hpp"
+#include <Windows.h>
 
 namespace fluid {
 namespace client {
@@ -80,6 +81,10 @@ public:
     //mFile.open("C:\FluCoMa\debug_cout.txt");
     //std::cout << input[0];
     //mFile.close();
+    
+    std::string o;
+    for (index i = 0; i < input[0].rows(); ++i) o += std::to_string(input[0].row(i));
+    OutputDebugString(o.c_str());
     //    end of mAlgorithm.process
     output[2] <<= input[2];
     output[1] <<= input[1];
