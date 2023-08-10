@@ -98,6 +98,19 @@ public:
         OutputDebugString(std::to_string(each.second).c_str());
         OutputDebugString("\n");
     }
+
+    //iterate through each voice
+    for (auto voice : mVoices) {
+        if (std::get<2>(voice)) {
+            //check against each incoming freq
+            //if freq(s) close enough, assign closest one to this voice
+            //remove
+            //if no freq close enough, clear this voice
+      }
+
+        //-
+    }
+
     output[2] <<= input[2];
     output[1] <<= input[1];
     output[0] <<= input[0];
