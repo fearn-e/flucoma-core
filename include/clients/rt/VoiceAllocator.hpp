@@ -77,10 +77,27 @@ public:
       mInputSize = input[0].size();
       //      mAlgorithm.init(get<0>(),mInputSize);
     }
+    //algo start
     PrintTensor(input);
-    //    mAlgorithm.process(input[0],output[0],output[1]);
 
-    //    end of mAlgorithm.process
+    mIncomingVoices.resize(0);
+    //place non-zero frequency voices in mIncomingVoices
+    for (int i = 0; i < mVoices.size(); ++i)
+    {
+        if (input[0].row(i) != 0 && input[1].row(i) != 0)
+        {
+            std::pair<double, double> temp;
+            temp.first = input[0].row(i); temp.second = input[1].row(i);
+            mIncomingVoices.push_back(temp);
+        }
+    }
+    //debug code, output mIncomingVoices
+    for (auto each : mIncomingVoices) {
+        OutputDebugString(std::to_string(each.first).c_str());
+        OutputDebugString(" ");
+        OutputDebugString(std::to_string(each.second).c_str());
+        OutputDebugString("\n");
+    }
     output[2] <<= input[2];
     output[1] <<= input[1];
     output[0] <<= input[0];
