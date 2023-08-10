@@ -77,6 +77,10 @@ public:
     }
 
     //    mAlgorithm.process(input[0],output[0],output[1]);
+    //mFile.open("C:\FluCoMa\debug_cout.txt");
+    //std::cout << input[0];
+    //mFile.close();
+    //    end of mAlgorithm.process
     output[2] <<= input[2];
     output[1] <<= input[1];
     output[0] <<= input[0];
@@ -97,6 +101,7 @@ public:
 
 private:
   //  algorithm::RunningStats mAlgorithm;
+  //std::ofstream                mFile;
   index                        mInputSize;
   ParameterTrackChanges<index> mSizeTracker;
 };
