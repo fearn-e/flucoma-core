@@ -78,17 +78,32 @@ public:
     }
 
     //    mAlgorithm.process(input[0],output[0],output[1]);
-    //mFile.open("C:\FluCoMa\debug_cout.txt");
-    //std::cout << input[0];
-    //mFile.close();
-    
-    std::string o;
-    for (index i = 0; i < input[0].rows(); ++i) o += std::to_string(input[0].row(i));
-    OutputDebugString(o.c_str());
+    PrintTensor(input);
     //    end of mAlgorithm.process
     output[2] <<= input[2];
     output[1] <<= input[1];
     output[0] <<= input[0];
+  }
+
+  template <typename T>
+  void PrintTensor(std::vector<HostVector<T>>& tensorToPrint)
+  {
+    std::string o;
+    std::string temp;
+    index       columns = 3;
+    for (index j = 0; j < columns; ++j)
+    {
+      for (index i = 0; i < tensorToPrint[j].rows(); ++i)
+      {
+        o += " ";
+        temp = std::to_string(tensorToPrint[j].row(i));
+        temp.resize(4);
+        o += temp;
+      }
+      o += ",";
+    }
+    o += "\n";
+    OutputDebugString(o.c_str());
   }
 
   MessageResult<void> clear()
