@@ -27,12 +27,30 @@ namespace fluid {
 namespace client {
 namespace voiceallocator {
 
+enum VoiceAllocatorParamIndex {
+    kMaxNumVoices,
+    kBirthLowTreshold,
+    kBirthHighTreshold,
+    kMinTrackLen,
+    kTrackMethod,
+    kTrackMagRange,
+    kTrackFreqRange,
+    kTrackProb
+};
+
 template <typename T>
 using HostVector = FluidTensorView<T, 1>;
 
-constexpr auto VoiceAllocatorParams = defineParameters(LongParam(
-    "history", "History Size", 2,
-    Min(2))); // will be most probably a max num voice and all other params
+constexpr auto VoiceAllocatorParams = defineParameters(
+    LongParam("maxNumVoices", "Max Number of Voices", 5, Min(1), Max(256)),
+    FloatParam("birthLowTreshold", "Track Birth Low Frequency Treshold", -24, Min(-144), Max(0)),
+    FloatParam("birthHighTreshold", "Track Birth High Frequency Treshold", -60, Min(-144), Max(0)),
+    LongParam("minTrackLen", "Minimum Track Length", 1, Min(1)),
+    EnumParam("trackMethod", "Tracking Method", 0, "Greedy", "Hungarian"),
+    FloatParam("trackMagRange", "Tracking Magnitude Range (dB)", 15., Min(1.), Max(200.)),
+    FloatParam("trackFreqRange", "Tracking Frequency Range (Hz)", 50., Min(1.), Max(10000.)),
+    FloatParam("trackProb", "Tracking Matching Probability", 0.5, Min(0.0), Max(1.0))
+);
 
 class VoiceAllocatorClient : public FluidBaseClient,
                              public ControlIn,
