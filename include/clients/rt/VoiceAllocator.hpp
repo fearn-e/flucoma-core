@@ -18,7 +18,10 @@ under the European Union’s Horizon 2020 research and innovation programme
 #include "../common/ParameterTypes.hpp"
 // #include "../../algorithms/public/RunningStats.hpp"
 #include "../../data/TensorTypes.hpp"
+#include "../../algorithms/util/PartialTracking.hpp"
 #include <Windows.h>
+#include <Eigen/Core>
+#include <cmath>
 
 namespace fluid {
 namespace client {
@@ -35,6 +38,9 @@ class VoiceAllocatorClient : public FluidBaseClient,
                              public ControlIn,
                              ControlOut
 {
+    template <typename T>
+    using vector = rt::vector<T>;
+
 public:
   using ParamDescType = decltype(VoiceAllocatorParams);
 
