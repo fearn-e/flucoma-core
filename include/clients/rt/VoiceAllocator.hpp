@@ -103,6 +103,7 @@ public:
       //      mAlgorithm.init(get<0>(),mInputSize);
     }
     //algo start
+    OutputDebugString("input:\n");
     PrintTensor(input);
 
     //place non-zero freq-mag pairs in incomingVoices
@@ -115,9 +116,6 @@ public:
                 input[1].row(i), false});
         }
     }
-    //debug code, output mIncomingVoices
-    for (auto each : mIncomingVoices) {
-        OutputDebugString(std::to_string(each.first).c_str());
 
     if (true) //change this to IF INPUT = TYPE MAGNITUDE, if dB skip
     {
@@ -136,10 +134,32 @@ public:
     mTracking.processFrame(incomingVoices, maxAmp, get<kMinTrackLen>(), get<kBirthLowTreshold>(), get<kBirthHighTreshold>(), get<kTrackMethod>(), get<kTrackMagRange>(), get<kTrackFreqRange>(), get<kTrackProb>(), alloc);
 
     vector<algorithm::SinePeak> voices = mTracking.getActivePeaks(alloc);
+
+    /*//debug console outputs
+    OutputDebugString("Incoming Voices:\n");
+    for (algorithm::SinePeak voice : incomingVoices)
+    {
+        OutputDebugString(std::to_string(voice.freq).c_str());
         OutputDebugString(" ");
-        OutputDebugString(std::to_string(each.second).c_str());
+        OutputDebugString(std::to_string(voice.logMag).c_str());
+        OutputDebugString(" ");
+        OutputDebugString(std::to_string(voice.assigned).c_str());
         OutputDebugString("\n");
     }
+    OutputDebugString("Max Amp:\n");
+    OutputDebugString(std::to_string(maxAmp).c_str());
+    OutputDebugString("\n");
+    OutputDebugString("Outgoing Voices:\n");
+    for (algorithm::SinePeak voice : voices)
+    {
+        OutputDebugString(std::to_string(voice.freq).c_str());
+        OutputDebugString(" ");
+        OutputDebugString(std::to_string(voice.logMag).c_str());
+        OutputDebugString(" ");
+        OutputDebugString(std::to_string(voice.assigned).c_str());
+        OutputDebugString("\n");
+    }
+    *///end of debug
 
     for (int i = 0; i < voices.size(); ++i)
     {
