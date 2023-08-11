@@ -78,14 +78,15 @@ public:
     return VoiceAllocatorParams;
   }
 
-  VoiceAllocatorClient(ParamSetViewType& p, FluidContext&, int numVoices = 5)
-      : mParams(p), mInputSize{0}, mSizeTracker{0}, mVoices(numVoices), mIncomingVoices(numVoices), mFreqRange{50}
+  VoiceAllocatorClient(ParamSetViewType& p, FluidContext& c, int numVoices = 5)
+      : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mFreqRange{50}, mTracking(c.allocator())
   {
     controlChannelsIn(3);
     controlChannelsOut({3, -1});
     setInputLabels({"left", "middle", "right"});
     setOutputLabels({"lefto", "middleo", "righto"});
     for (int i = 0; i < numVoices; ++i) { mFreeVoices.push(i); }
+    mTracking.init();
   }
 
   template <typename T>
@@ -104,40 +105,54 @@ public:
     //algo start
     PrintTensor(input);
 
-    mIncomingVoices.resize(0);
-    //place non-zero frequency voices in mIncomingVoices
+    //place non-zero freq-mag pairs in incomingVoices
+    rt::vector<algorithm::SinePeak> incomingVoices(0, alloc);
     for (int i = 0; i < mVoices.size(); ++i)
     {
         if (input[0].row(i) != 0 && input[1].row(i) != 0)
         {
-            std::pair<double, double> temp;
-            temp.first = input[0].row(i); temp.second = input[1].row(i);
-            mIncomingVoices.push_back(temp);
+            incomingVoices.push_back({input[0].row(i), 
+                input[1].row(i), false});
         }
     }
     //debug code, output mIncomingVoices
     for (auto each : mIncomingVoices) {
         OutputDebugString(std::to_string(each.first).c_str());
+
+    if (true) //change this to IF INPUT = TYPE MAGNITUDE, if dB skip
+    {
+        for (algorithm::SinePeak voice : incomingVoices)
+        {
+            voice.logMag = 20 * log10(std::max(voice.logMag, algorithm::epsilon));
+        }
+    }
+
+    double maxAmp = -999;
+    for (algorithm::SinePeak voice : incomingVoices)
+    {
+        if (voice.logMag > maxAmp) { maxAmp = voice.logMag; }
+    }
+
+    mTracking.processFrame(incomingVoices, maxAmp, get<kMinTrackLen>(), get<kBirthLowTreshold>(), get<kBirthHighTreshold>(), get<kTrackMethod>(), get<kTrackMagRange>(), get<kTrackFreqRange>(), get<kTrackProb>(), alloc);
+
+    vector<algorithm::SinePeak> voices = mTracking.getActivePeaks(alloc);
         OutputDebugString(" ");
         OutputDebugString(std::to_string(each.second).c_str());
         OutputDebugString("\n");
     }
 
-    //iterate through each voice
-    for (auto voice : mVoices) {
-        if (std::get<2>(voice)) {
-            //check against each incoming freq
-            //if freq(s) close enough, assign closest one to this voice
-            //remove
-            //if no freq close enough, clear this voice
-      }
-
-        //-
+    for (int i = 0; i < voices.size(); ++i)
+    {
+        output[0].row(i) = voices[i].freq;
+        output[1].row(i) = voices[i].logMag;
+        output[2].row(i) = voices[i].assigned;
     }
 
-    output[2] <<= input[2];
-    output[1] <<= input[1];
-    output[0] <<= input[0];
+    mTracking.prune();
+
+    //output[2] <<= input[2];
+    //output[1] <<= input[1];
+    //output[0] <<= input[0];
   }
 
   template <typename T>
@@ -176,10 +191,9 @@ public:
 
 private:
   //  algorithm::RunningStats mAlgorithm;
-  std::queue<int>                               mFreeVoices;
-  std::deque<int>                               mActiveVoices;
-  std::vector<std::tuple<float, float, bool>>   mVoices; //freq, mag, active
-  std::vector<std::pair<double, double>>        mIncomingVoices; //freq, mag
+  algorithm::PartialTracking                    mTracking;
+  rt::queue<int>                                mFreeVoices;
+  rt::deque<int>                                mActiveVoices;
   int                                           mFreqRange;
   index                                         mInputSize;
   ParameterTrackChanges<index>                  mSizeTracker;
