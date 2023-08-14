@@ -103,8 +103,8 @@ public:
       //      mAlgorithm.init(get<0>(),mInputSize);
     }
     //algo start
-    OutputDebugString("input:\n");
-    PrintTensor(input);
+    //OutputDebugString("input:\n");
+    //PrintTensor(input);
 
     //place non-zero freq-mag pairs in incomingVoices
     rt::vector<algorithm::SinePeak> incomingVoices(0, alloc);
@@ -161,6 +161,24 @@ public:
     }
     *///end of debug
 
+    //voice ID assignment
+    /*
+    for (auto activeVoice : mActiveVoices)
+    {
+        //no note offs, so need to do note offs ourselves
+
+        if (!mFreeVoices.empty())
+        {
+            index voiceIndex = mFreeVoices.front();
+            mFreeVoices.pop();
+            mActiveVoices.push_back(voiceIndex);
+
+        }
+        else
+        {
+
+        }
+    }*/
 
     //clear output
     for (int i = 0; i < get<kMaxNumVoices>(); ++i)
@@ -184,7 +202,7 @@ public:
     //output[0] <<= input[0];
   }
 
-  template <typename T>
+  /* template <typename T>
   void PrintTensor(std::vector<HostVector<T>>& tensorToPrint)
   {
     std::string o;
@@ -203,7 +221,7 @@ public:
     }
     o += "\n";
     OutputDebugString(o.c_str());
-  }
+  }*/
 
   MessageResult<void> clear()
   {
