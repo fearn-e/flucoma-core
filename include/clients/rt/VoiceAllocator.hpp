@@ -79,7 +79,7 @@ public:
   }
 
   VoiceAllocatorClient(ParamSetViewType& p, FluidContext& c)
-      : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mFreqRange{ 50 }, mVoiceIDAssignment(0, c.allocator()), mTracking(c.allocator())
+      : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mVoiceIDAssignment(0, c.allocator()), mTracking(c.allocator())
   {
     controlChannelsIn(2);
     controlChannelsOut({3, -1});
@@ -248,7 +248,6 @@ private:
   vector<index>                                 mVoiceIDAssignment;
   rt::queue<int>                                mFreeVoices;
   rt::deque<int>                                mActiveVoices;
-  int                                           mFreqRange;
   index                                         mInputSize;
   ParameterTrackChanges<index>                  mSizeTracker;
 };
