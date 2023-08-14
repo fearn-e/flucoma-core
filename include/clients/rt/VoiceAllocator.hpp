@@ -133,7 +133,7 @@ public:
 
     mTracking.processFrame(incomingVoices, maxAmp, get<kMinTrackLen>(), get<kBirthLowTreshold>(), get<kBirthHighTreshold>(), get<kTrackMethod>(), get<kTrackMagRange>(), get<kTrackFreqRange>(), get<kTrackProb>(), alloc);
 
-    vector<algorithm::SinePeak> voices = mTracking.getActivePeaks(alloc);
+    vector<std::tuple<index, algorithm::SinePeak>> voices = mTracking.getActiveVoices(alloc);
 
     /*//debug console outputs
     OutputDebugString("Incoming Voices:\n");
@@ -172,9 +172,9 @@ public:
 
     for (int i = 0; i < voices.size(); ++i)
     {
-        output[0].row(i) = voices[i].freq;
-        output[1].row(i) = voices[i].logMag;
-        output[2].row(i) = voices[i].assigned;
+        output[0].row(i) = std::get<1>(voices[i]).freq;
+        output[1].row(i) = std::get<1>(voices[i]).logMag;
+        output[2].row(i) = std::get<0>(voices[i]);
     }
 
     mTracking.prune();

@@ -132,6 +132,25 @@ public:
           track.peaks[asUnsigned(latencyFrame - track.startFrame)]);
     }
     return sinePeaks;
+  } 
+
+  // refactor this function with the one above
+  vector<std::tuple<index, SinePeak>> getActiveVoices(Allocator& alloc)
+  {
+    vector<std::tuple<index, SinePeak>> sinePeaks(0, alloc);
+    index            latencyFrame = mCurrentFrame - mMinTrackLength;
+    if (latencyFrame < 0) return sinePeaks;
+    for (auto&& track : mTracks)
+    {
+      if (track.startFrame > latencyFrame) continue;
+      if (track.endFrame >= 0 && track.endFrame <= latencyFrame) continue;
+      if (track.endFrame >= 0 &&
+          track.endFrame - track.startFrame < mMinTrackLength)
+        continue;
+      sinePeaks.push_back(std::tuple<index, SinePeak>{track.trackId,
+          track.peaks[asUnsigned(latencyFrame - track.startFrame)]});
+    }
+    return sinePeaks;
   }
 
 private:
