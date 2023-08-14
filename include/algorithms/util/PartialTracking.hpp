@@ -134,7 +134,7 @@ public:
     return sinePeaks;
   } 
 
-  // refactor this function with the one above
+  // todo: refactor this function with the one above
   vector<std::tuple<index, SinePeak>> getActiveVoices(Allocator& alloc)
   {
     vector<std::tuple<index, SinePeak>> sinePeaks(0, alloc);

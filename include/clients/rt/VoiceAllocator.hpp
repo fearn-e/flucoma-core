@@ -121,7 +121,7 @@ public:
         }
     }
 
-    if (true) //change this to IF INPUT = TYPE MAGNITUDE, if dB skip
+    if (true) //todo: change this to IF INPUT = TYPE MAGNITUDE, if dB skip
     {
         for (algorithm::SinePeak voice : incomingVoices)
         {
@@ -183,6 +183,8 @@ public:
 
         }
     }*/
+
+    //todo: need to set output size to = kMaxNumVoices
 
     //clear output
     for (int i = 0; i < get<kMaxNumVoices>(); ++i)
