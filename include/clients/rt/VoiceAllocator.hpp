@@ -78,14 +78,18 @@ public:
     return VoiceAllocatorParams;
   }
 
-  VoiceAllocatorClient(ParamSetViewType& p, FluidContext& c, int numVoices = 5)
-      : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mFreqRange{50}, mTracking(c.allocator())
+  VoiceAllocatorClient(ParamSetViewType& p, FluidContext& c)
+      : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mFreqRange{ 50 }, mVoiceIDAssignment(0, c.allocator()), mTracking(c.allocator())
   {
     controlChannelsIn(3);
     controlChannelsOut({3, -1});
     setInputLabels({"left", "middle", "right"});
     setOutputLabels({"lefto", "middleo", "righto"});
-    for (int i = 0; i < numVoices; ++i) { mFreeVoices.push(i); }
+    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
+    {
+        mFreeVoices.push(i);
+        mVoiceIDAssignment.push_back(-1);
+    }
     mTracking.init();
   }
 
@@ -239,6 +243,7 @@ public:
 private:
   //  algorithm::RunningStats mAlgorithm;
   algorithm::PartialTracking                    mTracking;
+  vector<index>                                 mVoiceIDAssignment;
   rt::queue<int>                                mFreeVoices;
   rt::deque<int>                                mActiveVoices;
   int                                           mFreqRange;
