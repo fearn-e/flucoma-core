@@ -42,7 +42,7 @@ template <typename T>
 using HostVector = FluidTensorView<T, 1>;
 
 constexpr auto VoiceAllocatorParams = defineParameters(
-    LongParam("maxNumVoices", "Max Number of Voices", 5, Min(1), Max(256)),
+    LongParamRuntimeMax<Primary>("maxNumVoices", "Max Number of Voices", 5, Min(1), Max(256)),
     FloatParam("birthLowTreshold", "Track Birth Low Frequency Treshold", -24, Min(-144), Max(0)),
     FloatParam("birthHighTreshold", "Track Birth High Frequency Treshold", -60, Min(-144), Max(0)),
     LongParam("minTrackLen", "Minimum Track Length", 1, Min(1)),
@@ -82,15 +82,34 @@ public:
       : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mVoiceIDAssignment(0, c.allocator()), mTracking(c.allocator())
   {
     controlChannelsIn(2);
-    controlChannelsOut({3, -1});
+    controlChannelsOut({3, get<kMaxNumVoices>(), get<kMaxNumVoices>().max()});
     setInputLabels({"frequencies", "magnitudes"});
     setOutputLabels({"frequencies", "magnitudes", "voice IDs"});
-    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
-    {
-        mFreeVoices.push(i);
-        mVoiceIDAssignment.push_back(-1);
-    }
-    mTracking.init();
+    init();
+  }
+
+  void init()
+  {
+      mMaxNumVoices = static_cast<index>(get<kMaxNumVoices>());
+      controlChannelsOut({ 3, mMaxNumVoices });
+      while (!mFreeVoices.empty())
+      {
+          mFreeVoices.pop();
+      }
+      while (!mActiveVoices.empty())
+      {
+          mActiveVoices.pop_back();
+      }
+      while (!mVoiceIDAssignment.empty())
+      {
+          mVoiceIDAssignment.pop_back();
+      }
+      for (index i = 0; i < mMaxNumVoices; ++i)
+      {
+          mFreeVoices.push(i);
+          mVoiceIDAssignment.push_back(-1);
+      }
+      mTracking.init();
   }
 
   template <typename T>
@@ -104,15 +123,14 @@ public:
     if (inputSizeChanged || sizeParamChanged)
     {
       mInputSize = input[0].size();
-      //      mAlgorithm.init(get<0>(),mInputSize);
+      init();
     }
-    //algo start
     //OutputDebugString("input:\n");
     //PrintTensor(input);
 
     //place non-zero freq-mag pairs in incomingVoices
     rt::vector<algorithm::SinePeak> incomingVoices(0, alloc);
-    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
+    for (int i = 0; i < mMaxNumVoices; ++i)
     {
         if (input[0].row(i) != 0 && input[1].row(i) != 0)
         {
@@ -187,14 +205,14 @@ public:
     //todo: need to set output size to = kMaxNumVoices
 
     //clear output
-    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
+    for (int i = 0; i < mMaxNumVoices; ++i)
     {
         output[0].row(i) = 0;
         output[1].row(i) = 0;
         output[2].row(i) = -1;
     }
 
-    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
+    for (int i = 0; i < mMaxNumVoices; ++i)
     {
         output[0].row(i) = std::get<1>(voices[i]).freq;
         output[1].row(i) = std::get<1>(voices[i]).logMag;
@@ -245,6 +263,7 @@ public:
 private:
   //  algorithm::RunningStats mAlgorithm;
   algorithm::PartialTracking                    mTracking;
+  index                                         mMaxNumVoices;
   vector<index>                                 mVoiceIDAssignment;
   rt::queue<int>                                mFreeVoices;
   rt::deque<int>                                mActiveVoices;
