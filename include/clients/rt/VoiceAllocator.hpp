@@ -81,10 +81,10 @@ public:
   VoiceAllocatorClient(ParamSetViewType& p, FluidContext& c)
       : mParams(p), mInputSize{ 0 }, mSizeTracker{ 0 }, mFreeVoices(c.allocator()), mActiveVoices(c.allocator()), mFreqRange{ 50 }, mVoiceIDAssignment(0, c.allocator()), mTracking(c.allocator())
   {
-    controlChannelsIn(3);
+    controlChannelsIn(2);
     controlChannelsOut({3, -1});
-    setInputLabels({"left", "middle", "right"});
-    setOutputLabels({"lefto", "middleo", "righto"});
+    setInputLabels({"frequencies", "magnitudes"});
+    setOutputLabels({"frequencies", "magnitudes", "voice IDs"});
     for (int i = 0; i < get<kMaxNumVoices>(); ++i)
     {
         mFreeVoices.push(i);
