@@ -192,7 +192,7 @@ public:
         output[2].row(i) = -1;
     }
 
-    for (int i = 0; i < voices.size(); ++i)
+    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
     {
         output[0].row(i) = std::get<1>(voices[i]).freq;
         output[1].row(i) = std::get<1>(voices[i]).logMag;
