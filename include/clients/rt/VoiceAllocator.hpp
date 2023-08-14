@@ -108,7 +108,7 @@ public:
 
     //place non-zero freq-mag pairs in incomingVoices
     rt::vector<algorithm::SinePeak> incomingVoices(0, alloc);
-    for (int i = 0; i < mVoices.size(); ++i)
+    for (int i = 0; i < get<kMaxNumVoices>(); ++i)
     {
         if (input[0].row(i) != 0 && input[1].row(i) != 0)
         {
