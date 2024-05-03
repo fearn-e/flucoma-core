@@ -12,6 +12,7 @@
 #include <random>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <unsupported/Eigen/NumericalDiff>
+#include <ofLog.h>
 
 
 namespace fluid {
@@ -43,8 +44,10 @@ void optimizeLayout(Eigen::ArrayXXd& embedding, RefeferenceArray& reference,
                                      4); // based on umap python implementation
   for (index i = 0; i < maxIter; i++)
   {
+    ofLogNotice("UMAP") << "Iteration " << i << " of " << maxIter;
     for (index j = 0; j < epochsPerSample.size(); j++)
     {
+      ofLogNotice("UMAP") << "Sample " << j << " of " << epochsPerSample.size();
       if (nextEpoch(j) > i) continue;
       ArrayXd current = embedding.row(embIndices(j));
       ArrayXd other = reference.row(refIndices(j));
@@ -186,21 +189,32 @@ public:
     SparseMatrixXd knnGraph = SparseMatrixXd(in.size(), in.size());
     ArrayXXd       dists = ArrayXXd::Zero(in.size(), k);
     mK = k;
+    ofLogNotice ( "UMAP" ) << "Making graph...";
     makeGraph(in, mK, knnGraph, dists, true);
+    ofLogNotice ( "UMAP" ) << "Finding sigma...";
     ArrayXd sigma = findSigma(k, dists);
+    ofLogNotice ( "UMAP" ) << "Computing high dimensional probabilities...";
     computeHighDimProb(dists, sigma, knnGraph);
+    ofLogNotice ( "UMAP" ) << "Normalizing rows...";
     SparseMatrixXd knnGraphT = knnGraph.transpose();
+    ofLogNotice ( "UMAP" ) << "Symmetrizing graph...";
     knnGraph = (knnGraph + knnGraphT) - knnGraph.cwiseProduct(knnGraphT);
     mAB = findAB(minDist);
+    ofLogNotice ( "UMAP" ) << "Training spectral embedding...";
     mEmbedding = spectralEmbedding.train(knnGraph, dims);
+    ofLogNotice ( "UMAP" ) << "Normalizing embedding...";
     mEmbedding = normalizeEmbedding(mEmbedding);
+    ofLogNotice ( "UMAP" ) << "Making compressed...";
     knnGraph.makeCompressed();
     ArrayXi rowIndices(knnGraph.nonZeros());
     ArrayXi colIndices(knnGraph.nonZeros());
     ArrayXd epochsPerSample(knnGraph.nonZeros());
+    ofLogNotice ( "UMAP" ) << "Getting graph indices...";
     getGraphIndices(knnGraph, rowIndices, colIndices);
+    ofLogNotice ( "UMAP" ) << "Computing epochs per sample...";
     computeEpochsPerSample(knnGraph, epochsPerSample);
     epochsPerSample = (epochsPerSample == 0).select(-1, epochsPerSample);
+    ofLogNotice ( "UMAP" ) << "Optimizing layout and updating...";
     optimizeLayoutAndUpdate(mEmbedding, mEmbedding, rowIndices, colIndices,
                    epochsPerSample, learningRate, maxIter);
     DataSet out(ids, _impl::asFluid(mEmbedding));
@@ -364,6 +378,7 @@ private:
     auto data = in.getData();
     for (index i = 0; i < in.size(); i++)
     {
+      ofLogNotice("UMAP") << "Making graph for sample " << i << " of " << in.size();
       auto [distances, nearestIds] =
           mTree.kNearest(data.row(i), discardFirst ? k + 1 : k);
 
