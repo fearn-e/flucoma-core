@@ -13,7 +13,8 @@
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <unsupported/Eigen/NumericalDiff>
 #include <ofLog.h>
-
+#include <chrono>
+#include <ofUtils.h>
 
 namespace fluid {
 namespace algorithm {
@@ -42,12 +43,42 @@ void optimizeLayout(Eigen::ArrayXXd& embedding, RefeferenceArray& reference,
   ArrayXd nextNegEpoch = epochsPerNegativeSample;
   ArrayXd bound = VectorXd::Constant(embedding.cols(),
                                      4); // based on umap python implementation
+  double startTime = ofGetElapsedTimef();
   for (index i = 0; i < maxIter; i++)
   {
-    ofLogNotice("UMAP") << "Iteration " << i << " of " << maxIter;
+	{ // Progress logging
+		double elapsedTime = ofGetElapsedTimef() - startTime;
+		double progress = (double)i / (double)maxIter * 100.0f;
+		if (i == 0) {
+			ofLogNotice("UMAP") << "Iteration " << (i + 1) << " of " << maxIter << ", calculating ETA...";
+		} else {
+			double eta = (elapsedTime / progress) * (100.0f - progress);
+			int etaHours = eta / 3600;
+			int etaMinutes = (eta - (etaHours * 3600)) / 60;
+			int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
+			ofLogNotice("UMAP") << "Progress: " << progress << "%";
+			ofLogNotice("UMAP") << "Iteration " << (i + 1) << " of " << maxIter;
+			if (etaHours > 0) {
+				ofLogNotice("UMAP") << "ETA: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s";
+			} else if (etaMinutes > 0) {
+				ofLogNotice("UMAP") << "ETA : " << etaMinutes << " m " << etaSeconds << "s";
+			} else {
+				ofLogNotice("UMAP") << "ETA: " << etaSeconds << "s";
+			}
+			int elapsedHours = elapsedTime / 3600;
+			int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
+			int elapsedSeconds = elapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+			if (elapsedHours > 0) {
+				ofLogNotice("UMAP") << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+			} else if (elapsedMinutes > 0) {
+				ofLogNotice("UMAP") << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+			} else {
+				ofLogNotice("UMAP") << "Elapsed: " << elapsedSeconds << "s";
+			}
+		}
+	}
     for (index j = 0; j < epochsPerSample.size(); j++)
     {
-      ofLogNotice("UMAP") << "Sample " << j << " of " << epochsPerSample.size();
       if (nextEpoch(j) > i) continue;
       ArrayXd current = embedding.row(embIndices(j));
       ArrayXd other = reference.row(refIndices(j));
@@ -177,6 +208,7 @@ public:
   DataSet train(DataSet& in, index k = 15, index dims = 2, double minDist = 0.1,
                 index maxIter = 200, double learningRate = 1.0)
   {
+	double startTime = ofGetElapsedTimef();
     using namespace Eigen;
     using namespace _impl;
     using namespace std;
@@ -189,35 +221,83 @@ public:
     SparseMatrixXd knnGraph = SparseMatrixXd(in.size(), in.size());
     ArrayXXd       dists = ArrayXXd::Zero(in.size(), k);
     mK = k;
-    ofLogNotice ( "UMAP" ) << "Making graph...";
+	double miscElapsedTime = ofGetElapsedTimef() - startTime;
+	ofLogNotice("UMAP") << "Making graph...";
     makeGraph(in, mK, knnGraph, dists, true);
-    ofLogNotice ( "UMAP" ) << "Finding sigma...";
+	double graphElapsedTime = ofGetElapsedTimef() - startTime - miscElapsedTime;
     ArrayXd sigma = findSigma(k, dists);
-    ofLogNotice ( "UMAP" ) << "Computing high dimensional probabilities...";
     computeHighDimProb(dists, sigma, knnGraph);
-    ofLogNotice ( "UMAP" ) << "Normalizing rows...";
     SparseMatrixXd knnGraphT = knnGraph.transpose();
-    ofLogNotice ( "UMAP" ) << "Symmetrizing graph...";
     knnGraph = (knnGraph + knnGraphT) - knnGraph.cwiseProduct(knnGraphT);
     mAB = findAB(minDist);
-    ofLogNotice ( "UMAP" ) << "Training spectral embedding...";
     mEmbedding = spectralEmbedding.train(knnGraph, dims);
-    ofLogNotice ( "UMAP" ) << "Normalizing embedding...";
     mEmbedding = normalizeEmbedding(mEmbedding);
-    ofLogNotice ( "UMAP" ) << "Making compressed...";
     knnGraph.makeCompressed();
     ArrayXi rowIndices(knnGraph.nonZeros());
     ArrayXi colIndices(knnGraph.nonZeros());
     ArrayXd epochsPerSample(knnGraph.nonZeros());
-    ofLogNotice ( "UMAP" ) << "Getting graph indices...";
     getGraphIndices(knnGraph, rowIndices, colIndices);
-    ofLogNotice ( "UMAP" ) << "Computing epochs per sample...";
     computeEpochsPerSample(knnGraph, epochsPerSample);
     epochsPerSample = (epochsPerSample == 0).select(-1, epochsPerSample);
-    ofLogNotice ( "UMAP" ) << "Optimizing layout and updating...";
+	miscElapsedTime = miscElapsedTime + ofGetElapsedTimef() - startTime - graphElapsedTime;
+	ofLogNotice ( "UMAP" ) << "Iterating...";
     optimizeLayoutAndUpdate(mEmbedding, mEmbedding, rowIndices, colIndices,
                    epochsPerSample, learningRate, maxIter);
-    DataSet out(ids, _impl::asFluid(mEmbedding));
+	double iteratingElapsedTime = ofGetElapsedTimef() - startTime - miscElapsedTime - graphElapsedTime;
+	double totalElapsedTime = ofGetElapsedTimef() - startTime;
+	{ // Graph time
+	  int elapsedHours = graphElapsedTime / 3600;
+	  int elapsedMinutes = (graphElapsedTime - (elapsedHours * 3600)) / 60;
+	  int elapsedSeconds = graphElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+	  if (elapsedHours > 0) {
+		ofLogNotice("UMAP") << "Graph took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else if (elapsedMinutes > 0) {
+		ofLogNotice("UMAP") << "Graph took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else {
+		ofLogNotice("UMAP") << "Graph took: " << elapsedSeconds << "s";
+	  }
+	}
+
+	{ // Iterating time
+	  int elapsedHours = iteratingElapsedTime / 3600;
+	  int elapsedMinutes = (iteratingElapsedTime - (elapsedHours * 3600)) / 60;
+	  int elapsedSeconds = iteratingElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+	  if (elapsedHours > 0) {
+		ofLogNotice("UMAP") << "Iterating took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else if (elapsedMinutes > 0) {
+		ofLogNotice("UMAP") << "Iterating took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else {
+		ofLogNotice("UMAP") << "Iterating took: " << elapsedSeconds << "s";
+	  }
+	}
+
+	{ // Misc time
+	  int elapsedHours = miscElapsedTime / 3600;
+	  int elapsedMinutes = (miscElapsedTime - (elapsedHours * 3600)) / 60;
+	  int elapsedSeconds = miscElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+	  if (elapsedHours > 0) {
+		ofLogNotice("UMAP") << "Misc took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else if (elapsedMinutes > 0) {
+		ofLogNotice("UMAP") << "Misc took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else {
+		ofLogNotice("UMAP") << "Misc took: " << elapsedSeconds << "s";
+	  }
+	}
+
+	{ // Total time
+	  int elapsedHours = totalElapsedTime / 3600;
+	  int elapsedMinutes = (totalElapsedTime - (elapsedHours * 3600)) / 60;
+	  int elapsedSeconds = totalElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+	  if (elapsedHours > 0) {
+		ofLogNotice("UMAP") << "Total time taken: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else if (elapsedMinutes > 0) {
+		ofLogNotice("UMAP") << "Total time taken: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+	  } else {
+		ofLogNotice("UMAP") << "Total time taken: " << elapsedSeconds << "s";
+	  }
+	}
+
+	DataSet out(ids, _impl::asFluid(mEmbedding));
     mInitialized = true;
     return out;
   }
@@ -378,7 +458,6 @@ private:
     auto data = in.getData();
     for (index i = 0; i < in.size(); i++)
     {
-      ofLogNotice("UMAP") << "Making graph for sample " << i << " of " << in.size();
       auto [distances, nearestIds] =
           mTree.kNearest(data.row(i), discardFirst ? k + 1 : k);
 
