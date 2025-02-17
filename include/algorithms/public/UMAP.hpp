@@ -12,9 +12,7 @@
 #include <random>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <unsupported/Eigen/NumericalDiff>
-#include <ofLog.h>
 #include <chrono>
-#include <ofUtils.h>
 
 namespace fluid {
 namespace algorithm {
@@ -43,37 +41,37 @@ void optimizeLayout(Eigen::ArrayXXd& embedding, RefeferenceArray& reference,
   ArrayXd nextNegEpoch = epochsPerNegativeSample;
   ArrayXd bound = VectorXd::Constant(embedding.cols(),
                                      4); // based on umap python implementation
-  double startTime = ofGetElapsedTimef();
+  std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
   for (index i = 0; i < maxIter; i++)
   {
 	{ // Progress logging
-		double elapsedTime = ofGetElapsedTimef() - startTime;
-		double progress = (double)i / (double)maxIter * 100.0f;
+    double elapsedTime = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1000.0;
+		double progress = (double)i / (double)maxIter * 100.0;
 		if (i == 0) {
-			ofLogNotice("UMAP") << "Iteration " << (i + 1) << " of " << maxIter << ", calculating ETA...";
+			std::cout << "Iteration " << (i + 1) << " of " << maxIter << ", calculating ETA...";
 		} else {
-			double eta = (elapsedTime / progress) * (100.0f - progress);
+			double eta = (elapsedTime / progress) * (100.0d - progress);
 			int etaHours = eta / 3600;
 			int etaMinutes = (eta - (etaHours * 3600)) / 60;
 			int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
-			ofLogNotice("UMAP") << "Progress: " << progress << "%";
-			ofLogNotice("UMAP") << "Iteration " << (i + 1) << " of " << maxIter;
+			std::cout << "Progress: " << progress << "%";
+			std::cout << "Iteration " << (i + 1) << " of " << maxIter;
 			if (etaHours > 0) {
-				ofLogNotice("UMAP") << "ETA: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s";
+				std::cout << "ETA: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s";
 			} else if (etaMinutes > 0) {
-				ofLogNotice("UMAP") << "ETA : " << etaMinutes << " m " << etaSeconds << "s";
+				std::cout << "ETA : " << etaMinutes << " m " << etaSeconds << "s";
 			} else {
-				ofLogNotice("UMAP") << "ETA: " << etaSeconds << "s";
+				std::cout << "ETA: " << etaSeconds << "s";
 			}
 			int elapsedHours = elapsedTime / 3600;
 			int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
 			int elapsedSeconds = elapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
 			if (elapsedHours > 0) {
-				ofLogNotice("UMAP") << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+				std::cout << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
 			} else if (elapsedMinutes > 0) {
-				ofLogNotice("UMAP") << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+				std::cout << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s";
 			} else {
-				ofLogNotice("UMAP") << "Elapsed: " << elapsedSeconds << "s";
+				std::cout << "Elapsed: " << elapsedSeconds << "s";
 			}
 		}
 	}
@@ -208,7 +206,7 @@ public:
   DataSet train(DataSet& in, index k = 15, index dims = 2, double minDist = 0.1,
                 index maxIter = 200, double learningRate = 1.0)
   {
-	double startTime = ofGetElapsedTimef();
+    std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     using namespace Eigen;
     using namespace _impl;
     using namespace std;
@@ -221,10 +219,10 @@ public:
     SparseMatrixXd knnGraph = SparseMatrixXd(in.size(), in.size());
     ArrayXXd       dists = ArrayXXd::Zero(in.size(), k);
     mK = k;
-	double miscElapsedTime = ofGetElapsedTimef() - startTime;
-	ofLogNotice("UMAP") << "Making graph...";
+  size_t miscElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count();
+	std::cout << "Making graph...";
     makeGraph(in, mK, knnGraph, dists, true);
-	double graphElapsedTime = ofGetElapsedTimef() - startTime - miscElapsedTime;
+    size_t graphElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count() - miscElapsedTime;
     ArrayXd sigma = findSigma(k, dists);
     computeHighDimProb(dists, sigma, knnGraph);
     SparseMatrixXd knnGraphT = knnGraph.transpose();
@@ -239,22 +237,22 @@ public:
     getGraphIndices(knnGraph, rowIndices, colIndices);
     computeEpochsPerSample(knnGraph, epochsPerSample);
     epochsPerSample = (epochsPerSample == 0).select(-1, epochsPerSample);
-	miscElapsedTime = miscElapsedTime + ofGetElapsedTimef() - startTime - graphElapsedTime;
-	ofLogNotice ( "UMAP" ) << "Iterating...";
+	miscElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count() - graphElapsedTime;
+	std::cout << "Iterating...";
     optimizeLayoutAndUpdate(mEmbedding, mEmbedding, rowIndices, colIndices,
                    epochsPerSample, learningRate, maxIter);
-	double iteratingElapsedTime = ofGetElapsedTimef() - startTime - miscElapsedTime - graphElapsedTime;
-	double totalElapsedTime = ofGetElapsedTimef() - startTime;
+	size_t iteratingElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count() - miscElapsedTime - graphElapsedTime;
+	size_t totalElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count();
 	{ // Graph time
 	  int elapsedHours = graphElapsedTime / 3600;
 	  int elapsedMinutes = (graphElapsedTime - (elapsedHours * 3600)) / 60;
 	  int elapsedSeconds = graphElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
 	  if (elapsedHours > 0) {
-		ofLogNotice("UMAP") << "Graph took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Graph took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else if (elapsedMinutes > 0) {
-		ofLogNotice("UMAP") << "Graph took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Graph took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else {
-		ofLogNotice("UMAP") << "Graph took: " << elapsedSeconds << "s";
+		std::cout << "Graph took: " << elapsedSeconds << "s";
 	  }
 	}
 
@@ -263,11 +261,11 @@ public:
 	  int elapsedMinutes = (iteratingElapsedTime - (elapsedHours * 3600)) / 60;
 	  int elapsedSeconds = iteratingElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
 	  if (elapsedHours > 0) {
-		ofLogNotice("UMAP") << "Iterating took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Iterating took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else if (elapsedMinutes > 0) {
-		ofLogNotice("UMAP") << "Iterating took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Iterating took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else {
-		ofLogNotice("UMAP") << "Iterating took: " << elapsedSeconds << "s";
+		std::cout << "Iterating took: " << elapsedSeconds << "s";
 	  }
 	}
 
@@ -276,11 +274,11 @@ public:
 	  int elapsedMinutes = (miscElapsedTime - (elapsedHours * 3600)) / 60;
 	  int elapsedSeconds = miscElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
 	  if (elapsedHours > 0) {
-		ofLogNotice("UMAP") << "Misc took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Misc took: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else if (elapsedMinutes > 0) {
-		ofLogNotice("UMAP") << "Misc took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Misc took: " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else {
-		ofLogNotice("UMAP") << "Misc took: " << elapsedSeconds << "s";
+		std::cout << "Misc took: " << elapsedSeconds << "s";
 	  }
 	}
 
@@ -289,11 +287,11 @@ public:
 	  int elapsedMinutes = (totalElapsedTime - (elapsedHours * 3600)) / 60;
 	  int elapsedSeconds = totalElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
 	  if (elapsedHours > 0) {
-		ofLogNotice("UMAP") << "Total time taken: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Total time taken: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else if (elapsedMinutes > 0) {
-		ofLogNotice("UMAP") << "Total time taken: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+		std::cout << "Total time taken: " << elapsedMinutes << "m " << elapsedSeconds << "s";
 	  } else {
-		ofLogNotice("UMAP") << "Total time taken: " << elapsedSeconds << "s";
+		std::cout << "Total time taken: " << elapsedSeconds << "s";
 	  }
 	}
 
@@ -456,8 +454,42 @@ private:
   {
     graph.reserve(in.size() * k);
     auto data = in.getData();
+    std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     for (index i = 0; i < in.size(); i++)
     {
+      if (i % 1000 == 0) {
+        { // Progress logging
+          double elapsedTime = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1000.0;
+          double progress = (double)i / (double)in.size() * 100.0;
+          if (i == 0) {
+            std::cout << "Making graph " << (i + 1) << " of " << in.size() << ", calculating ETA...";
+          } else {
+            double eta = (elapsedTime / progress) * (100.0 - progress);
+            int etaHours = eta / 3600;
+            int etaMinutes = (eta - (etaHours * 3600)) / 60;
+            int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
+            std::cout << "Progress: " << progress << "%";
+            std::cout << "Index " << (i + 1) << " of " << in.size();
+            if (etaHours > 0) {
+              std::cout << "ETA: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s";
+            } else if (etaMinutes > 0) {
+              std::cout << "ETA : " << etaMinutes << " m " << etaSeconds << "s";
+            } else {
+              std::cout << "ETA: " << etaSeconds << "s";
+            }
+            int elapsedHours = elapsedTime / 3600;
+            int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
+            int elapsedSeconds = elapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+            if (elapsedHours > 0) {
+              std::cout << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s";
+            } else if (elapsedMinutes > 0) {
+              std::cout << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s";
+            } else {
+              std::cout << "Elapsed: " << elapsedSeconds << "s";
+            }
+          }
+	      }
+      }
       auto [distances, nearestIds] =
           mTree.kNearest(data.row(i), discardFirst ? k + 1 : k);
 
