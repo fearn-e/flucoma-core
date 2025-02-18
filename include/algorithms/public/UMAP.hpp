@@ -54,7 +54,7 @@ void optimizeLayout(Eigen::ArrayXXd& embedding, RefeferenceArray& reference,
 			int etaHours = eta / 3600;
 			int etaMinutes = (eta - (etaHours * 3600)) / 60;
 			int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
-			std::cout << std::endl << "Progress: " << ( progress / 2.0 ) + 50.0 << "%" << std::endl;
+			std::cout << std::endl << "Task 2 of 2 progress: " << progress << "%" << std::endl;
 			std::cout << "Iteration " << (i + 1) << " of " << maxIter << std::endl;
 			if (etaHours > 0) {
 				std::cout << "ETA for iterating: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
@@ -469,7 +469,7 @@ private:
         int etaHours = eta / 3600;
         int etaMinutes = (eta - (etaHours * 3600)) / 60;
         int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
-        std::cout << std::endl << "Progress: " << progress / 2 << "%" << std::endl;
+        std::cout << std::endl << "Task 1 of 2 progress: " << progress << "%" << std::endl;
         std::cout << "Index " << (i + 1) << " of " << in.size() << std::endl;
         if (etaHours > 0) {
             std::cout << "ETA for graph: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
