@@ -48,20 +48,20 @@ void optimizeLayout(Eigen::ArrayXXd& embedding, RefeferenceArray& reference,
     double elapsedTime = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1000.0;
 		double progress = (double)i / (double)maxIter * 100.0;
 		if (i == 0) {
-			std::cout << "Optimizing layout, iteration " << (i + 1) << " of " << maxIter << ", calculating ETA..." << std::endl;
+			std::cout << std::endl << "Iteration " << (i + 1) << " of " << maxIter << ", calculating ETA..." << std::endl;
 		} else {
 			double eta = (elapsedTime / progress) * (100.0 - progress);
 			int etaHours = eta / 3600;
 			int etaMinutes = (eta - (etaHours * 3600)) / 60;
 			int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
-			std::cout << "Progress: " << progress / 2.0 << "%" << std::endl;
+			std::cout << std::endl << "Progress: " << ( progress / 2.0 ) + 50.0 << "%" << std::endl;
 			std::cout << "Iteration " << (i + 1) << " of " << maxIter << std::endl;
 			if (etaHours > 0) {
-				std::cout << "ETA for optimizing layout: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
+				std::cout << "ETA for iterating: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
 			} else if (etaMinutes > 0) {
-				std::cout << "ETA for optimizing layout: " << etaMinutes << " m " << etaSeconds << "s" << std::endl;
+				std::cout << "ETA for iterating: " << etaMinutes << " m " << etaSeconds << "s" << std::endl;
 			} else {
-				std::cout << "ETA for optimizing layout: " << etaSeconds << "s" << std::endl;
+				std::cout << "ETA for iterating: " << etaSeconds << "s" << std::endl;
 			}
 			int elapsedHours = elapsedTime / 3600;
 			int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
@@ -244,6 +244,7 @@ public:
 	size_t iteratingElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count() - miscElapsedTime - graphElapsedTime;
 	size_t totalElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count();
 	{ // Graph time
+      std::cout << endl;
 	  int elapsedHours = graphElapsedTime / 3600;
 	  int elapsedMinutes = (graphElapsedTime - (elapsedHours * 3600)) / 60;
 	  int elapsedSeconds = graphElapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
@@ -458,37 +459,36 @@ private:
     for (index i = 0; i < in.size(); i++)
     {
       if (i % 1000 == 0) {
-        { // Progress logging
-          double elapsedTime = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1000.0;
-          double progress = (double)i / (double)in.size() * 100.0;
-          if (i == 0) {
-            std::cout << "Making graph, index " << (i + 1) << " of " << in.size() << ", calculating ETA..." << std::endl;
-          } else {
-            double eta = (elapsedTime / progress) * (100.0 - progress);
-            int etaHours = eta / 3600;
-            int etaMinutes = (eta - (etaHours * 3600)) / 60;
-            int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
-            std::cout << "Progress: " << ( progress / 2 ) + 50.0 << "%" << std::endl;
-            std::cout << "Index " << (i + 1) << " of " << in.size() << std::endl;
-            if (etaHours > 0) {
-              std::cout << "ETA for graph: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
-            } else if (etaMinutes > 0) {
-              std::cout << "ETA for graph: " << etaMinutes << " m " << etaSeconds << "s" << std::endl;
-            } else {
-              std::cout << "ETA for graph: " << etaSeconds << "s" << std::endl;
-            }
-            int elapsedHours = elapsedTime / 3600;
-            int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
-            int elapsedSeconds = elapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
-            if (elapsedHours > 0) {
-              std::cout << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s" << std::endl;
-            } else if (elapsedMinutes > 0) {
-              std::cout << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s" << std::endl;
-            } else {
-              std::cout << "Elapsed: " << elapsedSeconds << "s" << std::endl;
-            }
-          }
-	      }
+        // Progress logging
+        double elapsedTime = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1000.0;
+        double progress = (double)i / (double)in.size() * 100.0;
+        if (i == 0) {
+        std::cout << std::endl << "Index " << (i + 1) << " of " << in.size() << ", calculating ETA..." << std::endl;
+        } else {
+        double eta = (elapsedTime / progress) * (100.0 - progress);
+        int etaHours = eta / 3600;
+        int etaMinutes = (eta - (etaHours * 3600)) / 60;
+        int etaSeconds = eta - (etaHours * 3600) - (etaMinutes * 60);
+        std::cout << std::endl << "Progress: " << progress / 2 << "%" << std::endl;
+        std::cout << "Index " << (i + 1) << " of " << in.size() << std::endl;
+        if (etaHours > 0) {
+            std::cout << "ETA for graph: " << etaHours << "h " << etaMinutes << "m " << etaSeconds << "s" << std::endl;
+        } else if (etaMinutes > 0) {
+            std::cout << "ETA for graph: " << etaMinutes << " m " << etaSeconds << "s" << std::endl;
+        } else {
+            std::cout << "ETA for graph: " << etaSeconds << "s" << std::endl;
+        }
+        int elapsedHours = elapsedTime / 3600;
+        int elapsedMinutes = (elapsedTime - (elapsedHours * 3600)) / 60;
+        int elapsedSeconds = elapsedTime - (elapsedHours * 3600) - (elapsedMinutes * 60);
+        if (elapsedHours > 0) {
+            std::cout << "Elapsed: " << elapsedHours << "h " << elapsedMinutes << "m " << elapsedSeconds << "s" << std::endl;
+        } else if (elapsedMinutes > 0) {
+            std::cout << "Elapsed: " << elapsedMinutes << "m " << elapsedSeconds << "s" << std::endl;
+        } else {
+            std::cout << "Elapsed: " << elapsedSeconds << "s" << std::endl;
+        }
+        }
       }
       auto [distances, nearestIds] =
           mTree.kNearest(data.row(i), discardFirst ? k + 1 : k);
