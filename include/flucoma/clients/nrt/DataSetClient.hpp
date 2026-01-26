@@ -39,7 +39,7 @@ template <typename T, typename U>
 auto sortedDistances(FluidTensorView<T, 1> x, FluidTensorView<U, 2> Y,
                      Allocator& alloc)
 {
-  rt::vector<std::pair<index, double>> distances(Y.rows(), alloc);
+  rt::vector<std::pair<index, double>> distances(asUnsigned(Y.rows()), alloc);
   std::generate(distances.begin(), distances.end(), [n = 0, &x, &Y]() mutable {
     auto result = std::make_pair(n, distance(x, Y.row(n)));
     n++;
@@ -203,7 +203,7 @@ public:
   }
 
   MessageResult<void> toBuffer(BufferPtr data, bool transpose,
-                               LabelSetClientRef labels)
+                               LabelSetClientRef labels, bool labelwise)
   {
     if (!data) return Error(NoBuffer);
     BufferAdaptor::Access buf(data.get());
@@ -217,7 +217,7 @@ public:
                   : FluidTensorView<const double, 2>(mAlgorithm.getData())
                         .transpose();
     auto labelsPtr = labels.get().lock();
-    if (labelsPtr) labelsPtr->setLabelSet(getIdsLabelSet());
+    if (labelsPtr) labelsPtr->setLabelSet(getIdsLabelSet(labelwise));
     return OK();
   }
 
@@ -225,7 +225,7 @@ public:
   {
     auto destPtr = dest.get().lock();
     if (!destPtr) return Error(NoDataSet);
-    destPtr->setLabelSet(getIdsLabelSet());
+    destPtr->setLabelSet(getIdsLabelSet(false));
     return OK();
   }
 
@@ -329,15 +329,16 @@ public:
   }
 
 private:
-  LabelSet getIdsLabelSet()
+  LabelSet getIdsLabelSet(bool labelwise)
   {
     algorithm::DataSetIdSequence seq("", 0, 0);
-    FluidTensor<string, 1>       newIds(mAlgorithm.size());
-    FluidTensor<string, 2>       labels(mAlgorithm.size(), 1);
-    labels.col(0) <<= mAlgorithm.getIds();
-    seq.generate(newIds);
-    return LabelSet(newIds, labels);
-  };
+    FluidTensor<string, 1>       indices(mAlgorithm.size());
+    seq.generate(indices);
+    return labelwise ? LabelSet(mAlgorithm.getIds(),
+                                FluidTensorView<string, 2>(indices).transpose())
+                     : LabelSet(indices,
+                                FluidTensorView<string, 2>(mAlgorithm.getIds()).transpose());
+  }
 };
 
 } // namespace dataset
@@ -349,7 +350,7 @@ namespace dataset {
 
 constexpr auto DataSetReadParams = defineParameters(
     InputDataSetClientRef::makeParam("dataSet", "DataSet Name"),
-    LongParam("numNeighbours", "Number of Nearest Neighbours", 1),
+    LongParam("numNeighbours", "Number of Nearest Neighbours", 1, Min(1)),
     InputDataSetClientRef::makeParam("lookupDataSet", "Lookup DataSet Name"),
     InputBufferParam("inputPointBuffer", "Input Point Buffer"),
     BufferParam("predictionBuffer", "Prediction Buffer"));
@@ -374,7 +375,7 @@ public:
 
   static constexpr auto& getParameterDescriptors() { return DataSetReadParams; }
 
-  DataSetRead(ParamSetViewType& p, FluidContext& c) : mParams(p)
+  DataSetRead(ParamSetViewType& p, FluidContext&) : mParams(p)
   {
     controlChannelsIn(1);
     controlChannelsOut({1, 1});
