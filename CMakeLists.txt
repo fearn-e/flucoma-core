@@ -8,7 +8,8 @@
 
 cmake_minimum_required (VERSION 3.28)
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    CACHE STRING "The MSVC runtime library to link with on Windows (/MT[d] by default)")
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.28.0")
   cmake_policy(SET CMP0135 NEW)
@@ -99,7 +100,7 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE  
   GIT_REPOSITORY https://github.com/fmtlib/fmt
   GIT_PROGRESS TRUE
-  GIT_TAG master 
+  GIT_TAG main
   EXCLUDE_FROM_ALL
 )
 
